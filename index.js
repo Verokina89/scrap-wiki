@@ -12,26 +12,37 @@ app.get('/', (req, res) => {
         if (response.status === 200) {
             const html = response.data;
             const $ = cheerio.load(html);
-
-            const pageTitle = $('title').text();
+    
+            // Extraer el texto del h1
+            const h1 = $('h1').text();
+            console.log("Título H1:", h1); // Imprimir en la terminal
 
             // Arr que guarda enlaces e imgs
-            const links = [];
-            const imgs = [];
+            const links = []
+            const imgs = []
+            const texts = []
 
             // Obtiene enlaces desde #mw-pages
             $('#mw-pages a').each((index, element) => {
                 const link = $(element).attr('href'); // Obtener el atributo href de cada enlace
                 const text = $(element).text() //texto visible del enlace
                 links.push({ name: text, url: `${mainURL}${link}`})
+                console.log("Enlace:", link, "Texto:", text); //Imprime en la terminal
             })
 
             // Obtener imgs url principal
             $('img').each((index, element) => {
                 const img = $(element).attr('src'); //Obtiene atributo src de cada img
                 imgs.push(img);
+                console.log("Imagen:", img); //Imprime en la terminal
             });
 
+            $('p').each((index, element) => {
+                const p = $(element).text(); //Obtiene atributo src de cada 'p'
+                texts.push(p);
+                console.log("Párrafo:", p); // Imprimir en la terminal
+            });
+            
             //orden alfabetico.
             const sortLinks = links.sort((a, b) => a.name.localeCompare(b.name))
             
@@ -39,16 +50,16 @@ app.get('/', (req, res) => {
             const allLinks = sortLinks.reduce((acc, current) => {
                 const firstLetter = current.name.charAt(0).toUpperCase();
                 if (!acc[firstLetter]) {
-                    acc[firstLetter] = [];
+                    acc[firstLetter] = []
                 }
-                acc[firstLetter].push(current);
-                return acc;
-            }, {});
+                acc[firstLetter].push(current)
+                return acc
+            }, {})
 
             //imprime HTML ordenado
             let htmlOutput = `
-            <h1>Páginas en la Categoria Músicos de Rap.</h1>
-            <h2>Esta categoría contiene las siguientes páginas de Raperos:</h2>`
+            <h1>${h1}</h1>
+            <p>${texts}</p>`
 
             for (const firstLetter in allLinks) {
                 htmlOutput += `<h3>${firstLetter}</h3><ul>`
@@ -58,45 +69,18 @@ app.get('/', (req, res) => {
                 htmlOutput += `</ul>`
             }
 
-            // Añadir imgs si es necesario
-            if (imgs.length > 0) {
-                htmlOutput += `<h2>Imágenes</h2><ul>`;
-                imgs.forEach(img => {
-                    htmlOutput += `<li><img src="${img}" alt="imagen"></li>`;
-                });
-                htmlOutput += `</ul>`;
-            }
-            //envia respusta del HTML creado
-            res.send(htmlOutput)
+            res.send(htmlOutput) //respuesta con el HTML generado
 
         } else {
             res.send('No se pudo realizar la solicitud a la URL')
         }
-        
+
     }).catch((error) => {
         console.error('Error al obtener los datos:', error);
         res.status(500).send('Error al realizar el scraping.');
-    });    
-
-    //         // HTML con enlaces e imgs obtenidas
-    //         res.send(`
-    //           <h1>Páginas en la Categoria Músicos de Rap.</h1>
-    //           <h2>Esta categoría contiene las siguientes páginas de Raperos:</h2>
-    //           <ul>
-    //             ${links.map(link => `<li><a href="${mainURL}${link}">${link}</a></li>`).join('')}
-    //           </ul>
-    //           <h2>Imágenes</h2>
-    //           <ul>
-    //             ${imgs.map(img => `<li><img src="${img}" alt="imagen"></li>`).join('')} 
-    //           </ul>
-    //         `);
-    //     } else {
-    //         res.send('No se pudo realizar la solicitud a la URL proporcionada.');
-    //     }
-    // }).catch((error) => {
-    //     console.error('Error al obtener los datos:', error);
-    //     res.status(500).send('Error al realizar el scraping.')
-    // })
+    });  
+      
+    return {}
 })
 
 const PORT = 3000;
